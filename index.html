@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>유통일반 시계 - Neo-Brutalist Classroom Timer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=JetBrains+Mono:wght@700;800&family=Noto+Sans+KR:wght@600;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-canvas: #FFFDF0;
+      --border-black: #121212;
+      --neo-yellow: #FFE600;
+      --neo-pink: #FF6584;
+      --neo-cyan: #3BF4D1;
+      --neo-blue: #4D8BFF;
+      --neo-orange: #FF7A00;
+      --neo-purple: #C084FC;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-canvas);
+      background-image: radial-gradient(#121212 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: #121212;
+    }
+
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Neo-Brutalism Sharp Shadow & Borders */
+    .neo-box {
+      border: 3.5px solid var(--border-black);
+      box-shadow: 5px 5px 0px var(--border-black);
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .neo-box-lg {
+      border: 4px solid var(--border-black);
+      box-shadow: 8px 8px 0px var(--border-black);
+    }
+
+    .neo-btn {
+      border: 3px solid var(--border-black);
+      box-shadow: 4px 4px 0px var(--border-black);
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.12s ease;
+    }
+
+    .neo-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px var(--border-black);
+    }
+
+    .neo-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px var(--border-black);
+    }
+
+    /* Mode tab active indicator */
+    .tab-active {
+      background-color: var(--neo-yellow) !important;
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0px var(--border-black) !important;
+    }
+
+    /* Falling Sand Particles Animation */
+    @keyframes sandDrop {
+      0% { transform: translateY(0) scaleY(1); opacity: 0.9; }
+      80% { transform: translateY(118px) scaleY(1.3); opacity: 1; }
+      100% { transform: translateY(124px) scaleY(0.2); opacity: 0; }
+    }
+
+    .sand-stream {
+      animation: sandStream 0.35s infinite linear;
+    }
+    @keyframes sandStream {
+      0% { opacity: 0.7; transform: scaleX(1); }
+      50% { opacity: 1; transform: scaleX(1.4); }
+      100% { opacity: 0.7; transform: scaleX(1); }
+    }
+
+    /* Warning Pulse for last minute */
+    @keyframes urgentPulse {
+      0%, 100% { background-color: #FF5252; }
+      50% { background-color: #FFE600; }
+    }
+    .urgent-pulse {
+      animation: urgentPulse 1s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    /* Custom Scrollbar for Neo-brutalism */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-left: 2px solid #121212;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #121212;
+      border: 1px solid #FFE600;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-black selection:text-yellow-300 p-3 sm:p-6 lg:p-8">
+
+  <header class="w-full max-w-6xl mx-auto mb-6">
+    <div class="neo-box bg-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 bg-[#FFE600] neo-btn flex items-center justify-center text-2xl" aria-hidden="true">
+          📦
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight uppercase text-black">
+              유통일반 시계
+            </h1>
+            <span class="text-xs bg-[#FF6584] text-white px-2 py-0.5 rounded-none font-bold border-2 border-black neo-btn cursor-default">
+              수업용 ver 2.0
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm font-bold text-gray-700 mt-0.5">
+            효율적인 상업·유통 실무 및 모둠 협동 수업 타이머
+          </p>
+        </div>
+      </div>
+
+      <!-- Utility Actions (Sound toggle, Fullscreen) -->
+      <div class="flex items-center gap-3">
+        <button id="soundToggleBtn" onclick="toggleMute()" class="neo-btn bg-[#3BF4D1] px-3 py-2 text-xs sm:text-sm flex items-center gap-1.5" title="소리 켜기/끄기">
+          <span id="soundIcon">🔊</span>
+          <span id="soundText" class="font-black">소리 ON</span>
+        </button>
+        <button id="fullscreenBtn" onclick="toggleFullScreen()" class="neo-btn bg-[#C084FC] px-3 py-2 text-xs sm:text-sm flex items-center gap-1.5" title="전자칠판 전체화면">
+          <span>⛶</span>
+          <span class="font-black">전체화면</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Classroom Mission Banner (Editable live for teachers) -->
+    <div class="neo-box bg-[#FFE600] mt-3 p-3 flex items-center gap-2">
+      <span class="bg-black text-white text-xs sm:text-sm font-black px-2 py-1 uppercase tracking-wider">수업 활동</span>
+      <input type="text" id="classMissionInput" value="[모둠 활동] 유통 채널별 물류 전략 토의 및 발표 준비" 
+        class="bg-transparent border-b-2 border-black focus:outline-none w-full font-bold text-sm sm:text-base px-2 py-0.5 placeholder-neutral-700" 
+        placeholder="여기에 오늘 수업 목표나 모둠 과제를 입력하세요 (클릭하여 수정)"/>
+    </div>
+  </header>
+
+  <main class="w-full max-w-6xl mx-auto flex-1 flex flex-col items-center">
+    
+    <!-- Tab Controls -->
+    <div class="flex items-center gap-3 w-full max-w-md mb-6">
+      <button id="tabTimer" onclick="switchMode('timer')" class="flex-1 py-3 text-center neo-btn bg-white text-base sm:text-lg font-black tab-active flex justify-center items-center gap-2">
+        <span>⏳</span> 모래시계 타이머
+      </button>
+      <button id="tabStopwatch" onclick="switchMode('stopwatch')" class="flex-1 py-3 text-center neo-btn bg-white text-base sm:text-lg font-black flex justify-center items-center gap-2">
+        <span>⏱️</span> 스톱워치
+      </button>
+    </div>
+
+    <section id="timerSection" class="w-full">
+      <div class="neo-box-lg bg-white p-5 sm:p-8 flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Timer alert badge (when urgent or completed) -->
+        <div id="urgentNotice" class="hidden w-full text-center py-2 mb-4 font-black text-sm sm:text-base border-2 border-black bg-rose-500 text-white animate-bounce">
+          ⚠️ 1분 남았습니다! 활동을 슬슬 정리해주세요!
+        </div>
+
+        <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- Hourglass Graphic SVG Visualizer -->
+          <div class="lg:col-span-5 flex flex-col items-center justify-center p-4 bg-[#F5F5F0] neo-box relative">
+            <div class="text-xs font-black uppercase tracking-wider mb-2 bg-black text-white px-2 py-0.5">
+              실시간 모래시계 뷰
+            </div>
+
+            <div class="relative w-48 h-64 sm:w-56 sm:h-72 flex items-center justify-center">
+              <svg viewBox="0 0 200 280" class="w-full h-full filter drop-shadow-[4px_4px_0px_#121212]">
+                <!-- Outer Glass Frame -->
+                <path d="M 30,20 L 170,20 L 170,30 L 155,45 Q 100,100 100,140 Q 100,100 45,45 L 30,30 Z" fill="#E2F1FF" stroke="#121212" stroke-width="6" stroke-linejoin="round" />
+                <path d="M 100,140 Q 100,180 155,235 L 170,250 L 170,260 L 30,260 L 30,250 L 45,235 Q 100,180 100,140 Z" fill="#E2F1FF" stroke="#121212" stroke-width="6" stroke-linejoin="round" />
+                
+                <!-- Wooden Base Tops & Bottoms -->
+                <rect x="15" y="10" width="170" height="14" rx="2" fill="#FFE600" stroke="#121212" stroke-width="5" />
+                <rect x="15" y="256" width="170" height="14" rx="2" fill="#FFE600" stroke="#121212" stroke-width="5" />
+                <line x1="26" y1="24" x2="26" y2="256" stroke="#121212" stroke-width="5" />
+                <line x1="174" y1="24" x2="174" y2="256" stroke="#121212" stroke-width="5" />
+
+                <!-- Sand Mask Definitions -->
+                <defs>
+                  <!-- Clip Top Bulb -->
+                  <clipPath id="topGlassClip">
+                    <path d="M 36,32 L 164,32 L 150,47 Q 100,100 100,140 Q 100,100 50,47 Z" />
+                  </clipPath>
+                  <!-- Clip Bottom Bulb -->
+                  <clipPath id="bottomGlassClip">
+                    <path d="M 100,140 Q 100,180 150,233 L 164,248 L 36,248 L 50,233 Q 100,180 100,140 Z" />
+                  </clipPath>
+                </defs>
+
+                <!-- Top Chamber Sand (Depletes from top to bottom) -->
+                <g clip-path="url(#topGlassClip)">
+                  <rect id="topSandRect" x="20" y="32" width="160" height="108" fill="#FF7A00" />
+                </g>
+
+                <!-- Bottom Chamber Sand (Fills up from bottom to top) -->
+                <g clip-path="url(#bottomGlassClip)">
+                  <rect id="bottomSandRect" x="20" y="248" width="160" height="0" fill="#FF7A00" />
+                  <!-- Mound effect at the bottom -->
+                  <path id="sandMound" d="M 70,248 Q 100,248 130,248 Z" fill="#E66500" />
+                </g>
+
+                <!-- Falling Sand Stream (Active while running) -->
+                <line id="sandStreamLine" x1="100" y1="138" x2="100" y2="246" stroke="#FF7A00" stroke-width="4" stroke-linecap="round" class="sand-stream" style="display: none;" />
+              </svg>
+
+              <!-- Progress Percentage Badge -->
+              <div class="absolute bottom-1 bg-black text-white font-mono-num text-xs px-2 py-0.5 font-bold border border-yellow-300">
+                진행도: <span id="progressPercent">0%</span>
+              </div>
+            </div>
+
+            <!-- Sand Color Picker for fun classroom customisation -->
+            <div class="mt-3 flex items-center gap-2">
+              <span class="text-xs font-black">모래 색상:</span>
+              <button onclick="setSandColor('#FF7A00')" class="w-5 h-5 bg-[#FF7A00] border-2 border-black hover:scale-110 transition-transform" title="오렌지"></button>
+              <button onclick="setSandColor('#FF6584')" class="w-5 h-5 bg-[#FF6584] border-2 border-black hover:scale-110 transition-transform" title="네온 핑크"></button>
+              <button onclick="setSandColor('#4D8BFF')" class="w-5 h-5 bg-[#4D8BFF] border-2 border-black hover:scale-110 transition-transform" title="스카이 블루"></button>
+              <button onclick="setSandColor('#3BF4D1')" class="w-5 h-5 bg-[#3BF4D1] border-2 border-black hover:scale-110 transition-transform" title="민트"></button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 flex flex-col items-center lg:items-start w-full">
+            
+            <!-- Big Digital Display -->
+            <div class="w-full bg-[#121212] p-6 sm:p-8 neo-box border-4 border-black text-center mb-6 relative">
+              <div class="text-[10px] sm:text-xs font-mono tracking-widest text-emerald-400 absolute top-2 left-3">
+                ● COUNTDOWN TIMER ACTIVE
+              </div>
+              <div id="timerDisplay" class="font-mono-num text-5xl sm:text-7xl lg:text-8xl font-black text-[#FFE600] tracking-tight py-2 select-all">
+                05:00
+              </div>
+              <div id="timerSubInfo" class="text-xs sm:text-sm text-neutral-300 font-bold mt-1">
+                설정 시간: 5분 00초
+              </div>
+            </div>
+
+            <!-- Quick Add Preset Buttons -->
+            <div class="w-full mb-6">
+              <div class="text-xs font-black uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <span>⚡ 간편 수업 시간 설정:</span>
+              </div>
+              <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <button onclick="quickSetTime(1)" class="neo-btn bg-[#FFF] hover:bg-[#FFE600] py-2 text-sm font-black">+1분</button>
+                <button onclick="quickSetTime(3)" class="neo-btn bg-[#FFF] hover:bg-[#FFE600] py-2 text-sm font-black">+3분</button>
+                <button onclick="quickSetTime(5)" class="neo-btn bg-[#FFF] hover:bg-[#FFE600] py-2 text-sm font-black">+5분</button>
+                <button onclick="quickSetTime(10)" class="neo-btn bg-[#FFF] hover:bg-[#FFE600] py-2 text-sm font-black">+10분</button>
+                <button onclick="quickSetTime(15)" class="neo-btn bg-[#FFF] hover:bg-[#FFE600] py-2 text-sm font-black">+15분</button>
+                <button onclick="quickSetTime(30)" class="neo-btn bg-[#FFF] hover:bg-[#FFE600] py-2 text-sm font-black">+30분</button>
+              </div>
+            </div>
+
+            <!-- Custom Manual Input -->
+            <div class="w-full mb-6 flex flex-wrap items-center gap-2 bg-[#F0FDF4] p-3 neo-box border-2">
+              <span class="text-xs font-black">직접 입력:</span>
+              <div class="flex items-center gap-1">
+                <input type="number" id="inputMinutes" min="0" max="180" value="5" class="w-16 p-1.5 text-center font-mono-num font-black text-lg border-2 border-black neo-btn bg-white">
+                <span class="font-bold text-sm">분</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <input type="number" id="inputSeconds" min="0" max="59" value="0" class="w-16 p-1.5 text-center font-mono-num font-black text-lg border-2 border-black neo-btn bg-white">
+                <span class="font-bold text-sm">초</span>
+              </div>
+              <button onclick="applyManualTime()" class="neo-btn bg-[#3BF4D1] px-4 py-2 text-xs sm:text-sm font-black ml-auto">
+                적용하기
+              </button>
+            </div>
+
+            <!-- Primary Control Buttons (Start, Pause, Reset) -->
+            <div class="w-full grid grid-cols-3 gap-3 sm:gap-4">
+              <button id="timerStartBtn" onclick="toggleTimer()" class="neo-btn bg-[#3BF4D1] py-3 sm:py-4 text-base sm:text-xl font-black flex items-center justify-center gap-2">
+                <span id="timerPlayIcon">▶</span>
+                <span id="timerPlayText">시작</span>
+              </button>
+              <button onclick="pauseTimer()" class="neo-btn bg-[#FFE600] py-3 sm:py-4 text-base sm:text-xl font-black flex items-center justify-center gap-2">
+                <span>⏸</span>
+                <span>일시정지</span>
+              </button>
+              <button onclick="resetTimer()" class="neo-btn bg-[#FF6584] text-white py-3 sm:py-4 text-base sm:text-xl font-black flex items-center justify-center gap-2">
+                <span>↺</span>
+                <span>초기화</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="stopwatchSection" class="w-full hidden">
+      <div class="neo-box-lg bg-white p-5 sm:p-8 flex flex-col items-center">
+        
+        <!-- Big Stopwatch Counter -->
+        <div class="w-full bg-[#121212] p-6 sm:p-10 neo-box border-4 border-black text-center mb-6 relative">
+          <div class="text-[10px] sm:text-xs font-mono tracking-widest text-[#FF6584] absolute top-2 left-3">
+            ● CHRONOMETER SYSTEM
+          </div>
+          <div id="stopwatchDisplay" class="font-mono-num text-5xl sm:text-7xl lg:text-8xl font-black text-white tracking-tight py-2">
+            00:00<span class="text-3xl sm:text-5xl text-[#3BF4D1]">.00</span>
+          </div>
+          <div class="text-xs text-neutral-400 font-bold mt-1">
+            분 : 초 . 1/100초 (밀리초)
+          </div>
+        </div>
+
+        <!-- Stopwatch Action Buttons -->
+        <div class="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <button id="swStartBtn" onclick="toggleStopwatch()" class="neo-btn bg-[#3BF4D1] py-3.5 text-base sm:text-lg font-black flex items-center justify-center gap-2">
+            <span id="swPlayIcon">▶</span>
+            <span id="swPlayText">시작</span>
+          </button>
+          <button id="swLapBtn" onclick="recordLap()" class="neo-btn bg-[#4D8BFF] text-white py-3.5 text-base sm:text-lg font-black flex items-center justify-center gap-2" disabled>
+            <span>🚩</span>
+            <span>랩 기록</span>
+          </button>
+          <button onclick="pauseStopwatch()" class="neo-btn bg-[#FFE600] py-3.5 text-base sm:text-lg font-black flex items-center justify-center gap-2">
+            <span>⏸</span>
+            <span>정지</span>
+          </button>
+          <button onclick="resetStopwatch()" class="neo-btn bg-[#FF6584] text-white py-3.5 text-base sm:text-lg font-black flex items-center justify-center gap-2">
+            <span>↺</span>
+            <span>리셋</span>
+          </button>
+        </div>
+
+        <!-- Lap History List -->
+        <div class="w-full max-w-2xl">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-sm font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span>📋 랩 타임 기록부 (<span id="lapCount">0</span>개)</span>
+            </div>
+            <button onclick="clearLaps()" class="text-xs font-bold underline hover:text-red-600">
+              기록 비우기
+            </button>
+          </div>
+
+          <div class="neo-box border-3 bg-[#FAFAFA] max-h-64 overflow-y-auto">
+            <table class="w-full text-left text-sm border-collapse">
+              <thead class="bg-black text-white font-mono sticky top-0 border-b-2 border-black">
+                <tr>
+                  <th class="p-2.5 text-center w-16">순번</th>
+                  <th class="p-2.5">구간 기록 (Lap)</th>
+                  <th class="p-2.5 text-right pr-4">전체 누적 시간</th>
+                </tr>
+              </thead>
+              <tbody id="lapTableBody" class="divide-y-2 divide-black font-mono-num font-bold">
+                <tr>
+                  <td colspan="3" class="p-6 text-center text-gray-500 font-sans font-bold">
+                    '시작' 버튼을 누른 후 '랩 기록'을 누르면 학생별/조별 구간 기록이 저장됩니다.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div id="finishModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="neo-box-lg bg-[#FFE600] max-w-md w-full p-6 text-center animate-bounce">
+      <div class="text-5xl mb-3">🔔</div>
+      <h2 class="text-3xl font-black text-black mb-2">시간이 종료되었습니다!</h2>
+      <p class="text-base font-bold text-gray-800 mb-6">
+        정해진 수업 활동 시간이 완료되었습니다.<br>선생님을 주목해 주세요!
+      </p>
+      <button onclick="closeFinishModal()" class="w-full neo-btn bg-black text-white py-3.5 text-lg font-black">
+        확인했습니다 👍
+      </button>
+    </div>
+  </div>
+
+  <footer class="w-full max-w-6xl mx-auto mt-6 text-center">
+    <div class="neo-box bg-white py-2.5 px-4 text-xs font-bold flex flex-wrap justify-between items-center gap-2">
+      <div>🏫 유통일반 교과목 수업 지원 시스템</div>
+      <div class="text-gray-600">키보드 단축키 지원: [스페이스바] 시작/일시정지 | [R] 초기화</div>
+    </div>
+  </footer>
+
+  <script>
+    // Audio Context Setup (100% self-contained Web Audio API)
+    let audioCtx = null;
+    let isMuted = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Play synthesized school chime/bell
+    function playAlarmSound() {
+      if (isMuted) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.18);
+
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime + idx * 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.18 + 0.8);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(audioCtx.currentTime + idx * 0.18);
+        osc.stop(audioCtx.currentTime + idx * 0.18 + 0.85);
+      });
+    }
+
+    // Play quick button click tick
+    function playTick(freq = 440) {
+      if (isMuted) return;
+      initAudio();
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.07);
+      } catch (e) {
+        console.warn("Audio tick error:", e);
+      }
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      const soundIcon = document.getElementById('soundIcon');
+      const soundText = document.getElementById('soundText');
+      if (isMuted) {
+        soundIcon.textContent = '🔇';
+        soundText.textContent = '소리 OFF';
+        document.getElementById('soundToggleBtn').classList.replace('bg-[#3BF4D1]', 'bg-gray-300');
+      } else {
+        soundIcon.textContent = '🔊';
+        soundText.textContent = '소리 ON';
+        document.getElementById('soundToggleBtn').classList.replace('bg-gray-300', 'bg-[#3BF4D1]');
+        playTick(600);
+      }
+    }
+
+    // Timer Variables
+    let timerTotalSeconds = 300; // default 5 minutes
+    let timerRemainingSeconds = 300;
+    let timerInterval = null;
+    let isTimerRunning = false;
+    let currentSandColor = '#FF7A00';
+
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerSubInfo = document.getElementById('timerSubInfo');
+    const timerPlayIcon = document.getElementById('timerPlayIcon');
+    const timerPlayText = document.getElementById('timerPlayText');
+    const timerStartBtn = document.getElementById('timerStartBtn');
+    const topSandRect = document.getElementById('topSandRect');
+    const bottomSandRect = document.getElementById('bottomSandRect');
+    const sandMound = document.getElementById('sandMound');
+    const sandStreamLine = document.getElementById('sandStreamLine');
+    const progressPercent = document.getElementById('progressPercent');
+    const urgentNotice = document.getElementById('urgentNotice');
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTimerUI() {
+      timerDisplay.textContent = formatTime(timerRemainingSeconds);
+
+      // Percentage of time elapsed (0% -> 100%)
+      const elapsedRatio = timerTotalSeconds > 0 
+        ? Math.min(1, Math.max(0, (timerTotalSeconds - timerRemainingSeconds) / timerTotalSeconds))
+        : 1;
+
+      progressPercent.textContent = Math.round(elapsedRatio * 100) + '%';
+
+      // SVG Hourglass heights
+      // Total top chamber vertical sand box is 108px (y: 32 -> 140)
+      const topHeight = Math.max(0, 108 * (1 - elapsedRatio));
+      const topY = 32 + (108 - topHeight);
+      topSandRect.setAttribute('y', topY);
+      topSandRect.setAttribute('height', topHeight);
+
+      // Bottom chamber: fills up to 108px high (y: 248 -> 140)
+      const bottomHeight = Math.min(108, 108 * elapsedRatio);
+      const bottomY = 248 - bottomHeight;
+      bottomSandRect.setAttribute('y', bottomY);
+      bottomSandRect.setAttribute('height', bottomHeight);
+
+      // Mound curve adjustments
+      if (elapsedRatio > 0.05 && elapsedRatio < 0.98) {
+        const moundPeak = Math.max(145, bottomY - 6);
+        sandMound.setAttribute('d', `M 60,${bottomY} Q 100,${moundPeak} 140,${bottomY} Z`);
+      } else {
+        sandMound.setAttribute('d', `M 70,${bottomY} Q 100,${bottomY} 130,${bottomY} Z`);
+      }
+
+      // 1-minute warning check
+      if (isTimerRunning && timerRemainingSeconds <= 60 && timerRemainingSeconds > 0) {
+        urgentNotice.classList.remove('hidden');
+      } else {
+        urgentNotice.classList.add('hidden');
+      }
+    }
+
+    function setSandColor(colorHex) {
+      currentSandColor = colorHex;
+      topSandRect.setAttribute('fill', colorHex);
+      bottomSandRect.setAttribute('fill', colorHex);
+      sandStreamLine.setAttribute('stroke', colorHex);
+      playTick(500);
+    }
+
+    function quickSetTime(mins) {
+      pauseTimer();
+      timerTotalSeconds = mins * 60;
+      timerRemainingSeconds = timerTotalSeconds;
+      timerSubInfo.textContent = `설정 시간: ${mins}분 00초`;
+      updateTimerUI();
+      playTick(450);
+    }
+
+    function applyManualTime() {
+      const minVal = parseInt(document.getElementById('inputMinutes').value, 10) || 0;
+      const secVal = parseInt(document.getElementById('inputSeconds').value, 10) || 0;
+      const total = (minVal * 60) + secVal;
+
+      if (total <= 0) {
+        return;
+      }
+      pauseTimer();
+      timerTotalSeconds = total;
+      timerRemainingSeconds = total;
+      timerSubInfo.textContent = `설정 시간: ${minVal}분 ${secVal}초`;
+      updateTimerUI();
+      playTick(520);
+    }
+
+    function toggleTimer() {
+      if (isTimerRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      if (timerRemainingSeconds <= 0) {
+        timerRemainingSeconds = timerTotalSeconds;
+      }
+      initAudio();
+      isTimerRunning = true;
+      timerPlayIcon.textContent = '⏸';
+      timerPlayText.textContent = '일시정지';
+      timerStartBtn.classList.replace('bg-[#3BF4D1]', 'bg-[#FFE600]');
+      sandStreamLine.style.display = 'block';
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (timerRemainingSeconds > 0) {
+          timerRemainingSeconds--;
+          updateTimerUI();
+          if (timerRemainingSeconds === 60) {
+            playTick(880); // gentle reminder ping at 1 minute
+          }
+        } else {
+          // Finished!
+          onTimerCompleted();
+        }
+      }, 1000);
+
+      updateTimerUI();
+    }
+
+    function pauseTimer() {
+      isTimerRunning = false;
+      clearInterval(timerInterval);
+      timerPlayIcon.textContent = '▶';
+      timerPlayText.textContent = '시작';
+      timerStartBtn.classList.replace('bg-[#FFE600]', 'bg-[#3BF4D1]');
+      sandStreamLine.style.display = 'none';
+      urgentNotice.classList.add('hidden');
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      timerRemainingSeconds = timerTotalSeconds;
+      updateTimerUI();
+      playTick(350);
+    }
+
+    function onTimerCompleted() {
+      pauseTimer();
+      sandStreamLine.style.display = 'none';
+      document.getElementById('finishModal').classList.remove('hidden');
+      playAlarmSound();
+    }
+
+    function closeFinishModal() {
+      document.getElementById('finishModal').classList.add('hidden');
+      resetTimer();
+    }
+
+    let swStartTime = 0;
+    let swElapsedTime = 0;
+    let swInterval = null;
+    let isSwRunning = false;
+    let lapCount = 0;
+    let lastLapTimestamp = 0;
+
+    const stopwatchDisplay = document.getElementById('stopwatchDisplay');
+    const swStartBtn = document.getElementById('swStartBtn');
+    const swPlayIcon = document.getElementById('swPlayIcon');
+    const swPlayText = document.getElementById('swPlayText');
+    const swLapBtn = document.getElementById('swLapBtn');
+    const lapTableBody = document.getElementById('lapTableBody');
+    const lapCountDisplay = document.getElementById('lapCount');
+
+    function formatStopwatchTime(ms) {
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      const hundredths = Math.floor((ms % 1000) / 10);
+
+      const mStr = String(minutes).padStart(2, '0');
+      const sStr = String(seconds).padStart(2, '0');
+      const msStr = String(hundredths).padStart(2, '0');
+
+      return `${mStr}:${sStr}<span class="text-3xl sm:text-5xl text-[#3BF4D1]">.${msStr}</span>`;
+    }
+
+    function formatRawStopwatchTime(ms) {
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      const hundredths = Math.floor((ms % 1000) / 10);
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
+    }
+
+    function updateStopwatchDisplay() {
+      const now = performance.now();
+      const currentElapsed = swElapsedTime + (isSwRunning ? (now - swStartTime) : 0);
+      stopwatchDisplay.innerHTML = formatStopwatchTime(currentElapsed);
+    }
+
+    function toggleStopwatch() {
+      if (isSwRunning) {
+        pauseStopwatch();
+      } else {
+        startStopwatch();
+      }
+    }
+
+    function startStopwatch() {
+      initAudio();
+      isSwRunning = true;
+      swStartTime = performance.now();
+      swPlayIcon.textContent = '⏸';
+      swPlayText.textContent = '정지';
+      swStartBtn.classList.replace('bg-[#3BF4D1]', 'bg-[#FFE600]');
+      swLapBtn.disabled = false;
+      swLapBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+      clearInterval(swInterval);
+      swInterval = setInterval(() => {
+        updateStopwatchDisplay();
+      }, 25);
+      playTick(500);
+    }
+
+    function pauseStopwatch() {
+      if (!isSwRunning) return;
+      isSwRunning = false;
+      swElapsedTime += performance.now() - swStartTime;
+      clearInterval(swInterval);
+      swPlayIcon.textContent = '▶';
+      swPlayText.textContent = '계속';
+      swStartBtn.classList.replace('bg-[#FFE600]', 'bg-[#3BF4D1]');
+      updateStopwatchDisplay();
+      playTick(400);
+    }
+
+    function resetStopwatch() {
+      pauseStopwatch();
+      swElapsedTime = 0;
+      lastLapTimestamp = 0;
+      updateStopwatchDisplay();
+      swLapBtn.disabled = true;
+      swLapBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      swPlayText.textContent = '시작';
+      playTick(350);
+    }
+
+    function recordLap() {
+      if (!isSwRunning && swElapsedTime === 0) return;
+      initAudio();
+      playTick(720);
+
+      const currentTotal = swElapsedTime + (isSwRunning ? (performance.now() - swStartTime) : 0);
+      const lapTime = currentTotal - lastLapTimestamp;
+      lastLapTimestamp = currentTotal;
+      lapCount++;
+      lapCountDisplay.textContent = lapCount;
+
+      if (lapCount === 1) {
+        lapTableBody.innerHTML = '';
+      }
+
+      const row = document.createElement('tr');
+      row.className = lapCount % 2 === 0 ? 'bg-white' : 'bg-yellow-50';
+      row.innerHTML = `
+        <td class="p-2.5 text-center font-black">
+          <span class="bg-black text-white px-2 py-0.5 rounded-none text-xs">#${lapCount}</span>
+        </td>
+        <td class="p-2.5 text-emerald-700 font-extrabold">+${formatRawStopwatchTime(lapTime)}</td>
+        <td class="p-2.5 text-right pr-4 font-black">${formatRawStopwatchTime(currentTotal)}</td>
+      `;
+      lapTableBody.insertBefore(row, lapTableBody.firstChild);
+    }
+
+    function clearLaps() {
+      lapCount = 0;
+      lastLapTimestamp = 0;
+      lapCountDisplay.textContent = '0';
+      lapTableBody.innerHTML = `
+        <tr>
+          <td colspan="3" class="p-6 text-center text-gray-500 font-sans font-bold">
+            기록이 초기화되었습니다.
+          </td>
+        </tr>
+      `;
+      playTick(300);
+    }
+
+    let currentMode = 'timer';
+
+    function switchMode(mode) {
+      currentMode = mode;
+      const tabTimer = document.getElementById('tabTimer');
+      const tabStopwatch = document.getElementById('tabStopwatch');
+      const timerSection = document.getElementById('timerSection');
+      const stopwatchSection = document.getElementById('stopwatchSection');
+
+      if (mode === 'timer') {
+        tabTimer.classList.add('tab-active');
+        tabStopwatch.classList.remove('tab-active');
+        timerSection.classList.remove('hidden');
+        stopwatchSection.classList.add('hidden');
+      } else {
+        tabStopwatch.classList.add('tab-active');
+        tabTimer.classList.remove('tab-active');
+        stopwatchSection.classList.remove('hidden');
+        timerSection.classList.add('hidden');
+      }
+      playTick(480);
+    }
+
+    // Classroom Projector Fullscreen Handler
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.warn("Fullscreen request error:", err);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+      playTick(500);
+    }
+
+    // Keyboard Shortcuts for teacher convenience
+    window.addEventListener('keydown', (e) => {
+      // Don't trigger if typing in text input
+      if (e.target.tagName === 'INPUT') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (currentMode === 'timer') {
+          toggleTimer();
+        } else {
+          toggleStopwatch();
+        }
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+        if (currentMode === 'timer') {
+          resetTimer();
+        } else {
+          resetStopwatch();
+        }
+      } else if (e.code === 'KeyL' && currentMode === 'stopwatch') {
+        e.preventDefault();
+        recordLap();
+      }
+    });
+
+    // Initialize initial visual state
+    window.onload = () => {
+      updateTimerUI();
+      updateStopwatchDisplay();
+    };
+  </script>
+</body>
+</html>
